@@ -1,0 +1,71 @@
+You should use dynamic SQL in cases where static SQL does not support the operation you want to perform, or in cases where you do not know the exact SQL statements that must be executed by a PL/SQL procedure. These SQL statements may depend on user input, or they may depend on processing work done by the program. The following sections describe typical situations where you should use dynamic SQL and typical problems that can be solved by using dynamic SQL.
+Data definition language (DDL) statements, such as CREATE, DROP, GRANT, and REVOKE
+Session control language (SCL) statements, such as ALTER SESSION and SET ROLE
+
+CREATE TYPE t_emp AS OBJECT (id NUMBER, name VARCHAR2(20))
+/
+CREATE TYPE t_emplist AS TABLE OF t_emp
+/
+
+CREATE TABLE dept_new (id NUMBER, emps t_emplist)
+    NESTED TABLE emps STORE AS emp_table;
+
+INSERT INTO dept_new VALUES (
+    10, 
+    t_emplist(
+        t_emp(1, 'SCOTT'),
+        t_emp(2, 'BRUCE')));
+
+DECLARE
+    deptid NUMBER;
+    ename  VARCHAR2(20);
+BEGIN
+    EXECUTE IMMEDIATE 'SELECT d.id, e.name
+        FROM dept_new d, TABLE(d.emps) e  -- not allowed in static SQL
+                                          -- in PL/SQL
+        WHERE e.id = 1'
+        INTO deptid, ename;
+END;
+/
+
+
+
+CREATE PROCEDURE insert_into_table (
+      table_name  VARCHAR2, 
+      deptnumber  NUMBER, 
+      deptname    VARCHAR2, 
+      location    VARCHAR2) IS
+   stmt_str    VARCHAR2(200);
+
+BEGIN
+   stmt_str := 'INSERT INTO ' || 
+      table_name || ' values 
+      (:deptno, :dname, :loc)';
+
+   EXECUTE IMMEDIATE stmt_str 
+      USING 
+      deptnumber, deptname, location;
+
+END;
+/
+
+
+DECLARE
+  TYPE EmpCurTyp IS REF CURSOR;
+  cur EmpCurTyp;
+  stmt_str VARCHAR2(200);
+  name VARCHAR2(20);
+  salary NUMBER;
+BEGIN
+  stmt_str := 'SELECT ename, sal FROM emp 
+    WHERE job = :1';
+  OPEN cur FOR stmt_str USING 'SALESMAN'; 
+
+LOOP
+  FETCH cur INTO name, salary; 
+  EXIT WHEN cur%NOTFOUND; 
+  -- <process data>  
+END LOOP; 
+CLOSE cur;
+END;
+/

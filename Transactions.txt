@@ -1,0 +1,35 @@
+commit;
+
+set transaction name "sal_update";
+
+UPDATE courses
+    SET price = 11.99 
+    WHERE title = 'Python for Absolute Beginners';
+
+SAVEPOINT after_banda_sal;
+
+UPDATE courses
+    SET price = 15.99  
+    WHERE title = 'Learn Python Programming Masterclass';
+
+SAVEPOINT after_greene_sal;
+
+ROLLBACK TO SAVEPOINT
+    after_banda_sal;
+	
+UPDATE courses
+    SET price =  15.99  
+    WHERE title = 'Learn Python Programming Masterclass';
+
+ROLLBACK;
+
+UPDATE courses
+    SET price =  15.99 
+    WHERE title = 'Python for Absolute Beginners';
+
+
+UPDATE courses
+    SET price =  15.99  
+    WHERE title = 'Learn Python Programming Masterclass';
+
+COMMIT;
